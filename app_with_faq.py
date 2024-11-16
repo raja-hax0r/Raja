@@ -1,7 +1,7 @@
 import streamlit as st
 import openai
 
-# Set up OpenAI API (replace with your API key)
+# Set up OpenAI API key
 openai.api_key = "your_openai_api_key"
 
 # Define the product database with FAQs
@@ -28,19 +28,26 @@ def query_faq_engine(product_name, user_question):
         if user_question.lower() in faq["question"].lower():
             return faq["answer"]
     
-    # If no match, use GPT for a more generalized response
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=f"You are an expert on {product_name}. Answer this question: {user_question}",
-        max_tokens=150
-    )
-    return response.choices[0].text.strip()
+    # If no match, use ChatGPT for a response
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Replace with "gpt-4" if desired
+            messages=[
+                {"role": "system", "content": f"You are an expert on {product_name}. Answer the user's question."},
+                {"role": "user", "content": user_question}
+            ],
+            max_tokens=150
+        )
+        return response['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
 
 # Homepage
 def show_homepage():
     st.title("Opus - Product Genie")
     st.markdown("### Select a Product:")
     
+    # Display clickable product buttons
     for product_name in faq_data.keys():
         if st.button(product_name):
             st.session_state.selected_product = product_name
